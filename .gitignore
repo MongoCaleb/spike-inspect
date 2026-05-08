@@ -1,0 +1,10 @@
+.env
+.venv/
+
+# Inspect eval logs - contain model_args including the API key in plaintext.
+# Regenerated on every run. Do not commit.
+logs/
+
+# Python bytecode
+__pycache__/
+*.pyc
