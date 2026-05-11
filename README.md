@@ -25,7 +25,7 @@ Empirical validation that Inspect AI + `inspect_swe` + Grove are a viable founda
 ├── verify_grove.py           Direct Anthropic SDK <-> Grove sanity check (no proxy,
 │                              no Inspect). Useful for confirming Grove credentials work.
 ├── tasks/
-│   ├── hello.py                       hello_basic + hello_claude_code
+│   ├── hello.py                       hello_basic + hello_anthropic
 │   ├── mcp_setup.py                   First real eval, no seeding         -> I (filesystem mismatch)
 │   ├── mcp_setup_seeded.py            Empty .zshrc seed                   -> I (still missed env)
 │   ├── mcp_setup_realistic.py         + mcp_servers via claude_code()     -> I (introspection mismatch)
@@ -72,14 +72,12 @@ set -a && source .env && set +a
 uv run python verify_grove.py
 
 # Step B: Bare Inspect connectivity (no sandbox, no inspect_swe).
-ANTHROPIC_API_KEY="dummy-not-used" \
 uv run inspect eval tasks/hello.py@hello_basic \
   --model "anthropic/$GROVE_MODEL" \
   --model-base-url "http://127.0.0.1:7676"
 
 # Step C: Full pipeline - Docker sandbox + inspect_swe bridge.
-ANTHROPIC_API_KEY="dummy-not-used" \
-uv run inspect eval tasks/hello.py@hello_claude_code \
+uv run inspect eval tasks/hello.py@hello_anthropic \
   --model "anthropic/$GROVE_MODEL" \
   --model-base-url "http://127.0.0.1:7676"
 
@@ -94,7 +92,7 @@ uv run inspect eval tasks/hello.py@hello_claude_code \
 uv run inspect view
 ```
 
-The `ANTHROPIC_API_KEY="dummy-not-used"` is required because the Anthropic SDK errors on construction without one; the proxy strips it before anything reaches Grove.
+`.env` must include `ANTHROPIC_API_KEY=dummy-not-used` because the Anthropic SDK errors on construction without one; the proxy strips it before anything reaches Grove. Inspect auto-loads `.env` via `python-dotenv`, so no inline prefix is needed.
 
 ## Confirming logs are clean
 
@@ -113,7 +111,7 @@ If you ever revert to the dual-header approach (passing `-M default_headers={...
 | `verify_grove.py` | Does Grove accept the Anthropic SDK request when both `api-key:` (real) and `x-api-key:` (dummy) headers are present? |
 | `proxy.py` `__health` | Is the proxy alive and pointing at the right Grove upstream? |
 | `hello_basic` via proxy | Does Inspect's `anthropic/` provider talk to the proxy correctly? |
-| `hello_claude_code` via proxy | Does `inspect_swe`'s sandbox bridge route Claude Code's API calls through Inspect's proxy-configured client? |
+| `hello_anthropic` via proxy | Does `inspect_swe`'s sandbox bridge route Claude Code's API calls through Inspect's proxy-configured client? |
 | `mcp_setup_first` | What does a real multi-turn agentic trajectory on a real `agent-skills` eval prompt look like, scored by `model_graded_qa`? |
 | `mcp_setup_first_seeded` | Does adding empty shell profiles change the agent's behavior? (No.) |
 | `mcp_setup_first_realistic` | Does passing `mcp_servers=[...]` via `claude_code()` close the gap? (No - the agent reads files, not runtime state.) |

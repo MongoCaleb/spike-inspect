@@ -631,6 +631,7 @@ dependencies = [
     { name = "fastapi" },
     { name = "inspect-ai" },
     { name = "inspect-swe" },
+    { name = "openai" },
     { name = "uvicorn" },
 ]
 
@@ -639,13 +640,14 @@ requires-dist = [
     { name = "anthropic", specifier = ">=0.100.0" },
     { name = "fastapi", specifier = ">=0.136.1" },
     { name = "inspect-ai", specifier = ">=0.3.220" },
-    { name = "inspect-swe", specifier = ">=0.2.51" },
+    { name = "inspect-swe", specifier = ">=0.2.52" },
+    { name = "openai", specifier = ">=1.0.0" },
     { name = "uvicorn", specifier = ">=0.46.0" },
 ]
 
 [[package]]
 name = "inspect-swe"
-version = "0.2.51"
+version = "0.2.52"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "agent-client-protocol" },
@@ -659,9 +661,9 @@ dependencies = [
     { name = "sniffio" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/64/c2/7b26188aa71c193dbdea999b05987fe4eaffea0c6e800474d160657b56ac/inspect_swe-0.2.51.tar.gz", hash = "sha256:aad6e19492f2cc049604046bef8e587f37b9543fec64be7392059ebd72869557", size = 69195, upload-time = "2026-05-07T15:29:45.02Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/cf/65/d036b5d00e473483fdcb4193b1c8a29c4146b4e90ffe89de8eeb09b80895/inspect_swe-0.2.52.tar.gz", hash = "sha256:94564f8488a9a9a8f5fbd5b6bf3f2e4abb070935f6d77d99d17c9a5777596e70", size = 73740, upload-time = "2026-05-09T14:01:19.937Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b2/24/c993f1770b5da80f4e7aeac86db36821228bc9acbfaa6bd093c87736ffed/inspect_swe-0.2.51-py3-none-any.whl", hash = "sha256:fb6cc86c2878e87eeed7ac235a4aa60ec5ea5d733daa93f0ed090887a49aad90", size = 96287, upload-time = "2026-05-07T15:29:43.598Z" },
+    { url = "https://files.pythonhosted.org/packages/cb/69/5e03470de314c4b1baf60ff8166adeec3fdfb0bb6747a9ddbd52f9639c02/inspect_swe-0.2.52-py3-none-any.whl", hash = "sha256:f24a9cf70aba34eb4a06fb9bd21137c7fa38b479be24fe3a5eef17881e3d8441", size = 103736, upload-time = "2026-05-09T14:01:18.349Z" },
 ]
 
 [[package]]
@@ -1068,6 +1070,25 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/ed/ad/483d9e262f4b831000062e5d8a45e342166ec8aaa1195264982bca267e62/numpy-2.4.4-cp314-cp314t-win32.whl", hash = "sha256:dddbbd259598d7240b18c9d87c56a9d2fb3b02fe266f49a7c101532e78c1d871", size = 6155500, upload-time = "2026-03-29T13:21:28.205Z" },
     { url = "https://files.pythonhosted.org/packages/c7/03/2fc4e14c7bd4ff2964b74ba90ecb8552540b6315f201df70f137faa5c589/numpy-2.4.4-cp314-cp314t-win_amd64.whl", hash = "sha256:a7164afb23be6e37ad90b2f10426149fd75aee07ca55653d2aa41e66c4ef697e", size = 12637755, upload-time = "2026-03-29T13:21:31.107Z" },
     { url = "https://files.pythonhosted.org/packages/58/78/548fb8e07b1a341746bfbecb32f2c268470f45fa028aacdbd10d9bc73aab/numpy-2.4.4-cp314-cp314t-win_arm64.whl", hash = "sha256:ba203255017337d39f89bdd58417f03c4426f12beed0440cfd933cb15f8669c7", size = 10566643, upload-time = "2026-03-29T13:21:34.339Z" },
+]
+
+[[package]]
+name = "openai"
+version = "2.36.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "anyio" },
+    { name = "distro" },
+    { name = "httpx" },
+    { name = "jiter" },
+    { name = "pydantic" },
+    { name = "sniffio" },
+    { name = "tqdm" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/f4/a1/4d5e84cf51720fc1526cc49e10ac1961abcccb55b0efb3d970db1e9a2728/openai-2.36.0.tar.gz", hash = "sha256:139dea0edd2f1b30c33d46ae1a6929e03906254140318e4608e98fe8c566f2e7", size = 753003, upload-time = "2026-05-07T17:33:17.075Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/9d/1c/5d43735b2553baae2a5e899dcbcd0670a86930d993184d72ca909bf11c9b/openai-2.36.0-py3-none-any.whl", hash = "sha256:143f6194b548dbc2c921af1f1b03b9f14c85fed8a75b5b516f5bcc11a2a50c63", size = 1302361, upload-time = "2026-05-07T17:33:15.063Z" },
 ]
 
 [[package]]
@@ -1648,6 +1669,18 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/28/c0/3c7a39ff68022ddfd7d93f3337ad90389a342f761c4d71de99a3ccc57857/tiktoken-0.12.0-cp314-cp314t-musllinux_1_2_aarch64.whl", hash = "sha256:54c891b416a0e36b8e2045b12b33dd66fb34a4fe7965565f1b482da50da3e86a", size = 1194908, upload-time = "2025-10-06T20:22:32.073Z" },
     { url = "https://files.pythonhosted.org/packages/ab/0d/c1ad6f4016a3968c048545f5d9b8ffebf577774b2ede3e2e352553b685fe/tiktoken-0.12.0-cp314-cp314t-musllinux_1_2_x86_64.whl", hash = "sha256:5edb8743b88d5be814b1a8a8854494719080c28faaa1ccbef02e87354fe71ef0", size = 1253706, upload-time = "2025-10-06T20:22:33.385Z" },
     { url = "https://files.pythonhosted.org/packages/af/df/c7891ef9d2712ad774777271d39fdef63941ffba0a9d59b7ad1fd2765e57/tiktoken-0.12.0-cp314-cp314t-win_amd64.whl", hash = "sha256:f61c0aea5565ac82e2ec50a05e02a6c44734e91b51c10510b084ea1b8e633a71", size = 920667, upload-time = "2025-10-06T20:22:34.444Z" },
+]
+
+[[package]]
+name = "tqdm"
+version = "4.67.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "colorama", marker = "sys_platform == 'win32'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/09/a9/6ba95a270c6f1fbcd8dac228323f2777d886cb206987444e4bce66338dd4/tqdm-4.67.3.tar.gz", hash = "sha256:7d825f03f89244ef73f1d4ce193cb1774a8179fd96f31d7e1dcde62092b960bb", size = 169598, upload-time = "2026-02-03T17:35:53.048Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/16/e1/3079a9ff9b8e11b846c6ac5c8b5bfb7ff225eee721825310c91b3b50304f/tqdm-4.67.3-py3-none-any.whl", hash = "sha256:ee1e4c0e59148062281c49d80b25b67771a127c85fc9676d3be5f243206826bf", size = 78374, upload-time = "2026-02-03T17:35:50.982Z" },
 ]
 
 [[package]]

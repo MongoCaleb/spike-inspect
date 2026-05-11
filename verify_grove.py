@@ -21,12 +21,17 @@ from anthropic import Anthropic
 
 def main() -> int:
     grove_key = os.environ.get("GROVE_API_KEY")
-    grove_base = os.environ.get("GROVE_BASE_URL")
+    grove_base_root = os.environ.get("GROVE_BASE_URL")
     model = os.environ.get("GROVE_MODEL", "claude-opus-4-6")
 
-    if not grove_key or not grove_base:
-        print("ERROR: GROVE_API_KEY and GROVE_BASE_URL must be set", file=sys.stderr)
+    if not grove_key or not grove_base_root:
+        print(
+            "ERROR: GROVE_API_KEY and GROVE_BASE_URL must be set",
+            file=sys.stderr,
+        )
         return 1
+
+    grove_base = grove_base_root.rstrip("/") + "/anthropic"
 
     client = Anthropic(
         # SDK requires *some* api_key. The SDK will send `x-api-key: dummy`,
@@ -36,7 +41,7 @@ def main() -> int:
         default_headers={"api-key": grove_key},
     )
 
-    print(f"POST {grove_base}/v1/messages")
+    print(f"POST {grove_base}")
     print(f"  model: {model}")
     print(f"  headers: api-key=<grove>, x-api-key=dummy-not-used")
     print()
