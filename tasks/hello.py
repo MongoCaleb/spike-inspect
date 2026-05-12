@@ -6,6 +6,8 @@ Docker sandbox + inspect_swe's bridge translating Claude Code's API calls
 through Inspect's configured model provider.
 """
 
+import os
+
 from inspect_ai import Task, task
 from inspect_ai.dataset import Sample
 from inspect_ai.scorer import includes
@@ -40,11 +42,29 @@ def hello_anthropic() -> Task:
     )
 
 @task
-def hello_opencode() -> Task:
-    """Routes the same prompt through opencode() in a Docker sandbox."""
+def hello_openai() -> Task:
+    """Routes the same prompt through opencode() in a Docker sandbox, using
+    the OpenAI Chat Completions protocol end-to-end.
+
+    OpenCode's default `opencode_model` is `anthropic/...`, which makes it
+    format requests as Anthropic Messages (`/v1/messages`). To exercise the
+    proxy's `/openai/` route, OpenCode must format requests as OpenAI Chat
+    Completions, and Inspect's host client must be the OpenAI provider
+    pointed at the proxy's `/openai/` base URL.
+
+    Invoke with:
+        uv run inspect eval tasks/hello.py@hello_openai \\
+            --model "$OPENAI_MODEL" \\
+            --model-base-url "http://127.0.0.1:7676/openai"
+
+    `$OPENAI_MODEL` is in `provider/id` form (e.g. `openai/gpt-4o`); passing
+    `openai/$ANTHROPIC_MODEL` would send an Anthropic model id to Grove's
+    OpenAI endpoint and get rejected with `api_not_supported`.
+    """
+    opencode_model = os.environ.get("OPENAI_MODEL") or "openai/gpt-4o"
     return Task(
         dataset=[HELLO_SAMPLE],
-        solver=opencode(),
+        solver=opencode(opencode_model=opencode_model),
         scorer=includes(),
         sandbox="docker",
     )

@@ -22,7 +22,7 @@ from anthropic import Anthropic
 def main() -> int:
     grove_key = os.environ.get("GROVE_API_KEY")
     grove_base_root = os.environ.get("GROVE_BASE_URL")
-    model = os.environ.get("GROVE_MODEL", "claude-opus-4-6")
+    model = os.environ.get("ANTHROPIC_MODEL", "claude-opus-4-6")
 
     if not grove_key or not grove_base_root:
         print(
@@ -41,7 +41,7 @@ def main() -> int:
         default_headers={"api-key": grove_key},
     )
 
-    print(f"POST {grove_base}")
+    print(f"POST {grove_base}/v1/messages")
     print(f"  model: {model}")
     print(f"  headers: api-key=<grove>, x-api-key=dummy-not-used")
     print()

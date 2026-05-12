@@ -73,15 +73,23 @@ uv run python verify_grove.py
 
 # Step B: Bare Inspect connectivity (no sandbox, no inspect_swe).
 uv run inspect eval tasks/hello.py@hello_basic \
-  --model "anthropic/$GROVE_MODEL" \
-  --model-base-url "http://127.0.0.1:7676"
+  --model "anthropic/$ANTHROPIC_MODEL" \
+  --model-base-url "http://127.0.0.1:7676/anthropic"
 
-# Step C: Full pipeline - Docker sandbox + inspect_swe bridge.
+# Step C: Full pipeline - Docker sandbox + inspect_swe bridge (Anthropic).
 uv run inspect eval tasks/hello.py@hello_anthropic \
-  --model "anthropic/$GROVE_MODEL" \
-  --model-base-url "http://127.0.0.1:7676"
+  --model "anthropic/$ANTHROPIC_MODEL" \
+  --model-base-url "http://127.0.0.1:7676/anthropic"
 
-# Step D+: Walk up the realism ladder. Same flags; just substitute the task name.
+# Step C-openai: Same pipeline through Grove's OpenAI Chat Completions endpoint
+# via the OpenCode sandbox harness. `$OPENAI_MODEL` is already in `provider/id`
+# form (e.g. `openai/gpt-4o`); do NOT use `openai/$ANTHROPIC_MODEL` here — Grove
+# rejects Anthropic model ids on its OpenAI endpoint with `api_not_supported`.
+uv run inspect eval tasks/hello.py@hello_openai \
+  --model "$OPENAI_MODEL" \
+  --model-base-url "http://127.0.0.1:7676/openai"
+
+# Step D+: Walk up the realism ladder. Same flags as Step C; just substitute the task name.
 #   tasks/mcp_setup.py@mcp_setup_first
 #   tasks/mcp_setup_seeded.py@mcp_setup_first_seeded
 #   tasks/mcp_setup_realistic.py@mcp_setup_first_realistic
@@ -100,7 +108,7 @@ uv run inspect view
 uv run inspect log dump logs/<file>.eval | jq '.eval.model_args, .eval.model_base_url'
 ```
 
-Should print `{}` and `"http://127.0.0.1:7676"`. Empty `model_args` and a localhost URL — no Grove key, no Grove URL.
+Should print `{}` and a localhost URL ending in `/anthropic` or `/openai` (e.g. `"http://127.0.0.1:7676/anthropic"`). Empty `model_args` and a localhost URL — no Grove key, no Grove URL.
 
 If you ever revert to the dual-header approach (passing `-M default_headers={...}`), the key WILL appear in `model_args` in plaintext — so don't.
 
@@ -112,6 +120,7 @@ If you ever revert to the dual-header approach (passing `-M default_headers={...
 | `proxy.py` `__health` | Is the proxy alive and pointing at the right Grove upstream? |
 | `hello_basic` via proxy | Does Inspect's `anthropic/` provider talk to the proxy correctly? |
 | `hello_anthropic` via proxy | Does `inspect_swe`'s sandbox bridge route Claude Code's API calls through Inspect's proxy-configured client? |
+| `hello_openai` via proxy | Does the proxy's `/openai/` route (with `v1/` injection) route OpenCode's OpenAI-protocol calls through Inspect's `openai/` provider to Grove's Chat Completions endpoint? |
 | `mcp_setup_first` | What does a real multi-turn agentic trajectory on a real `agent-skills` eval prompt look like, scored by `model_graded_qa`? |
 | `mcp_setup_first_seeded` | Does adding empty shell profiles change the agent's behavior? (No.) |
 | `mcp_setup_first_realistic` | Does passing `mcp_servers=[...]` via `claude_code()` close the gap? (No - the agent reads files, not runtime state.) |
@@ -123,7 +132,6 @@ If you ever revert to the dual-header approach (passing `-M default_headers={...
 - **Codex CLI through Grove is blocked on a wire_api hardcode.** `inspect_swe`'s `codex_cli()` writes `wire_api: responses` into Codex's TOML config (see [`_codex_cli/codex_cli.py`](https://github.com/meridianlabs-ai/inspect_swe/blob/main/src/inspect_swe/_codex_cli/codex_cli.py) line ~240). Grove gives us OpenAI Chat Completions only. A one-line override (vendor patch or monkey-patch) to write `wire_api: chat` is the workaround. ~30-min spike to verify chat-mode Codex behaves acceptably.
 - **No Gemini access through Grove** as of May 8, 2026. Cross-harness Gemini cuts unless an alternate path appears.
 - **Skill paths are hardcoded** to a local checkout of `mongodb/agent-skills`. Should be parameterized via env var or a config file before the team uses the repo.
-- **The proxy is single-provider (Anthropic).** For OpenAI/Codex through Grove, extend with a `/openai/v1/chat/completions` route — same auth-stripping-and-injection pattern, different upstream path prefix.
 
 ## References
 

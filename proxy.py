@@ -13,7 +13,8 @@ Then point Inspect at:
     --model-base-url http://127.0.0.1:7676/anthropic
     (no --model-args needed for auth)
 
-An equivalent route is exposed at /opencode for OpenCode-style clients.
+An equivalent route is exposed at /openai for OpenAI-compatible clients
+(point Inspect's `openai/` provider at `http://127.0.0.1:7676/openai`).
 """
 
 from __future__ import annotations
@@ -121,7 +122,13 @@ async def anthropic_proxy(path: str, request: Request):
 
 
 @app.api_route(
-    "/opencode/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"]
+    "/openai/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"]
 )
-async def opencode_proxy(path: str, request: Request):
-    return await _proxy("opencode", path, request)
+async def openai_proxy(path: str, request: Request):
+    # The OpenAI SDK treats `/v1` as part of the base URL, not the request path,
+    # so it posts to `<base>/chat/completions`. Inject `v1/` so the upstream URL
+    # lands at `{grove_base}/openai/v1/chat/completions` regardless of whether
+    # the client's base URL includes `/v1` or not.
+    if not path.startswith("v1/"):
+        path = f"v1/{path}"
+    return await _proxy("openai", path, request)
