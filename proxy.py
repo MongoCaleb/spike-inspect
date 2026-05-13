@@ -5,8 +5,9 @@ to Inspect's anthropic SDK. Strips client-supplied auth headers and injects
 `api-key:` server-side so the key never enters Inspect's process and never
 lands in eval logs' model_args.
 
-Run:
-    set -a && source .env && set +a
+`.env` (in the working directory) is auto-loaded at import time via
+python-dotenv, so the proxy can be started directly:
+
     uv run uvicorn proxy:app --host 127.0.0.1 --port 7676
 
 Then point Inspect at:
@@ -19,19 +20,25 @@ An equivalent route is exposed at /openai for OpenAI-compatible clients
 
 from __future__ import annotations
 
+import json
 import os
 from contextlib import asynccontextmanager
 
 import httpx
+from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 from fastapi.responses import StreamingResponse
+
+# Load .env from CWD without overriding values already present in the
+# environment (so explicit exports still win).
+load_dotenv(override=False)
 
 
 def _required_env(name: str) -> str:
     value = os.environ.get(name)
     if not value:
         raise RuntimeError(
-            f"{name} not set. Run with `set -a && source .env && set +a` first."
+            f"{name} not set. Add it to .env or export it before starting the proxy."
         )
     return value
 
@@ -51,7 +58,6 @@ HOP_BY_HOP = {
     "trailer",
     "upgrade",
 }
-
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -121,6 +127,18 @@ async def anthropic_proxy(path: str, request: Request):
     return await _proxy("anthropic", path, request)
 
 
+# The /openai route is kept for connectivity validation only - it is NOT
+# suitable for clean evals. OpenCode's binary unconditionally fires a side
+# call per session against a hardcoded "You are a title generator..." system
+# prompt to populate its own session UI. That call rides the same OpenAI
+# client Inspect configures, so it shows up in every eval log as an extra
+# turn with a non-task system message (visible as the
+# `attachment://6d8e3f6d...` system content in openai.json / codex.json /
+# 5.5.json). It also hardcodes `reasoning_effort: minimal` for GPT-5-family
+# models, which Grove rejects - see `_rewrite_openai_body` above for the
+# server-side workaround. Net: the OpenAI/OpenCode path pollutes traces with
+# agent-harness-internal calls we can't suppress from this side. Prefer the
+# Anthropic/Claude Code path for scored runs until OpenCode exposes a switch.
 @app.api_route(
     "/openai/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"]
 )

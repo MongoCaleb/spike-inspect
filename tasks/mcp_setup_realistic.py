@@ -14,16 +14,16 @@ should diagnose this and produce the expected_output trajectory.
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
 from inspect_ai import Task, task
-from inspect_ai.dataset import Sample
 from inspect_ai.scorer import model_graded_qa
 from inspect_ai.solver import Generate, Solver, TaskState, chain, solver
 from inspect_ai.tool import MCPServerConfigStdio
 from inspect_ai.util import sandbox
 from inspect_swe import claude_code
+
+from _evals_lib import load_sample_by_index
 
 EVALS_PATH = Path(
     "/Users/dachary.carey/workspace/agent-skills/testing/mongodb-mcp-setup/evals/evals.json"
@@ -35,16 +35,6 @@ MONGODB_MCP_SERVER = MCPServerConfigStdio(
     args=["-y", "mongodb-mcp-server"],
     env={"MDB_MCP_CONNECTION_STRING": "${MDB_MCP_CONNECTION_STRING}"},
 )
-
-
-def load_first_sample() -> Sample:
-    data = json.loads(EVALS_PATH.read_text())
-    first = data["evals"][0]
-    return Sample(
-        input=first["prompt"],
-        target=first["expected_output"],
-        metadata={"id": first["id"], "skill": data["skill_name"]},
-    )
 
 
 @solver
@@ -61,7 +51,7 @@ def seed_dev_environment() -> Solver:
 @task
 def mcp_setup_first_realistic() -> Task:
     return Task(
-        dataset=[load_first_sample()],
+        dataset=[load_sample_by_index(EVALS_PATH, 0)],
         solver=chain(
             seed_dev_environment(),
             claude_code(mcp_servers=[MONGODB_MCP_SERVER]),

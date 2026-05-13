@@ -632,6 +632,7 @@ dependencies = [
     { name = "inspect-ai" },
     { name = "inspect-swe" },
     { name = "openai" },
+    { name = "python-dotenv" },
     { name = "uvicorn" },
 ]
 
@@ -642,6 +643,7 @@ requires-dist = [
     { name = "inspect-ai", specifier = ">=0.3.220" },
     { name = "inspect-swe", specifier = ">=0.2.52" },
     { name = "openai", specifier = ">=1.0.0" },
+    { name = "python-dotenv", specifier = ">=1.2.2" },
     { name = "uvicorn", specifier = ">=0.46.0" },
 ]
 

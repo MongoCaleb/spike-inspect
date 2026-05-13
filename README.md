@@ -62,45 +62,71 @@ uv run uvicorn proxy:app --host 127.0.0.1 --port 7676
 curl http://127.0.0.1:7676/__health
 ```
 
-### Step 2: Run evals against the proxy
+**Note:** ``set -a && source .env && set +a`` reads the .env file and exports the variables to the environment. `.env` must include the `ANTHROPIC_API_KEY` because the Anthropic SDK errors on construction without one; the proxy strips it before anything reaches Grove. Inspect auto-loads `.env` via `python-dotenv`, so no inline prefix is needed.
+
+
+### Step 2: Run evals
+
+Be sure you are in your repo's root directory, and have activated your virtual environment. Then, source your .env file:
 
 ```bash
 # In your eval-running shell:
 set -a && source .env && set +a
+```
 
-# Step A: SDK sanity (no proxy, no Inspect) - confirms Grove credentials work.
+#### To run a single task:
+```bash
+uv run inspect eval tasks/<my_python_file>.py@<my @task method name> \
+  --model "anthropic/$ANTHROPIC_MODEL" \
+  --model-base-url "http://127.0.0.1:7676/anthropic"
+```
+
+#### To run all tasks in a file:
+```bash
+uv run inspect eval tasks/<my_python_file>.py \
+  --model "anthropic/$ANTHROPIC_MODEL" \
+  --model-base-url "http://127.0.0.1:7676/anthropic"
+```
+
+#### For reference, here are the commands you can run for the "hello" test evals:
+ 
+SDK sanity (no proxy, no Inspect) - confirms Grove credentials work.
+```bash
 uv run python verify_grove.py
-
-# Step B: Bare Inspect connectivity (no sandbox, no inspect_swe).
+```
+Bare Inspect connectivity (no sandbox, no inspect_swe).
+```bash
 uv run inspect eval tasks/hello.py@hello_basic \
   --model "anthropic/$ANTHROPIC_MODEL" \
   --model-base-url "http://127.0.0.1:7676/anthropic"
-
-# Step C: Full pipeline - Docker sandbox + inspect_swe bridge (Anthropic).
+```
+Full pipeline - Docker sandbox + inspect_swe bridge (Anthropic).
+```bash
 uv run inspect eval tasks/hello.py@hello_anthropic \
   --model "anthropic/$ANTHROPIC_MODEL" \
   --model-base-url "http://127.0.0.1:7676/anthropic"
+```
+#### A note about `openai`: Not ready yet because of the title-generator issue.
 
-# Step C-openai: Same pipeline through Grove's OpenAI Chat Completions endpoint
-# via the OpenCode sandbox harness. `$OPENAI_MODEL` is already in `provider/id`
-# form (e.g. `openai/gpt-4o`); do NOT use `openai/$ANTHROPIC_MODEL` here — Grove
-# rejects Anthropic model ids on its OpenAI endpoint with `api_not_supported`.
+Same pipeline through Grove's OpenAI Chat Completions endpoint
+via the OpenCode sandbox harness. `$OPENAI_MODEL` is already in `provider/id`
+form (e.g. `openai/gpt-4o`); do NOT use `openai/$ANTHROPIC_MODEL` here — Grove
+rejects Anthropic model ids on its OpenAI endpoint with `api_not_supported`.
+Connectivity check only — OpenCode injects a hardcoded title-generator turn
+into every session, so this path is not suitable for scored evals. See
+#### See "Known issues" below.
 uv run inspect eval tasks/hello.py@hello_openai \
   --model "$OPENAI_MODEL" \
   --model-base-url "http://127.0.0.1:7676/openai"
 
-# Step D+: Walk up the realism ladder. Same flags as Step C; just substitute the task name.
-#   tasks/mcp_setup.py@mcp_setup_first
-#   tasks/mcp_setup_seeded.py@mcp_setup_first_seeded
-#   tasks/mcp_setup_realistic.py@mcp_setup_first_realistic
-#   tasks/mcp_setup_settings.py@mcp_setup_first_settings
-#   tasks/mcp_setup_with_skill.py@mcp_setup_first_with_skill   <- 1.000
+### Step 3: Check the log reports
 
-# Inspect every trajectory in the web viewer.
+In a third terminal window, run the following command to start the Inspect viewer:
+
+```bash
 uv run inspect view
 ```
-
-`.env` must include `ANTHROPIC_API_KEY=dummy-not-used` because the Anthropic SDK errors on construction without one; the proxy strips it before anything reaches Grove. Inspect auto-loads `.env` via `python-dotenv`, so no inline prefix is needed.
+Then open http://127.0.0.1:7575/ to explore the logs.
 
 ## Confirming logs are clean
 
@@ -127,9 +153,39 @@ If you ever revert to the dual-header approach (passing `-M default_headers={...
 | `mcp_setup_first_settings` | Does seeding `~/.claude/settings.local.json` (which `inspect_swe` doesn't overwrite) close the diagnostic gap? (Yes - agent now correctly identifies the missing env var. But scores `I` because it stops at description and doesn't act.) |
 | `mcp_setup_first_with_skill` | Does loading the `mongodb-mcp-setup` skill make the agent execute its prescribed steps? **Yes — score moves to `C` (1.000)**. |
 
+## Creating Tasks
+
+Tasks are created in the `tasks/` directory. Each file in `tasks/` can contain multiple tasks. Each ``@task`` function tests one of the evals defined in the evals.json file you specify at the top of the file. 
+
+For example, to test the evals in a schema-design/evals.json file, you might create a file named schema_design.py that contains an ``@task`` function for each eval in the evals.json file. 
+
+An example function looks like this:
+
+```python
+@task
+def product_view_counter() -> Task:
+    return Task(
+        dataset=[load_sample_by_name(EVALS_PATH, "product-view-counter")],
+        solver=claude_code(),
+        scorer=model_graded_qa(),
+        sandbox="docker",
+    )
+```
+
+Note that the name "product-view-counter" matches the name field in the evals.json file.
+If the evals.json file does not have a name field, you can use the ``id`` field of the eval. 
+
+For example, if you want to use the eval with ``"id": 3,``, you would use ``dataset=[load_sample_by_id(EVALS_PATH, 3)]``.
+
+Alternatively, you can use the index of the eval in the evals.json file. For example, to use the first eval in the file, 
+you would use ``dataset=[load_sample_by_index(EVALS_PATH, 0)]``.
+
+Use any of the existing task files as a starting point for your own tasks.
+
 ## Known issues / open work
 
 - **Codex CLI through Grove is blocked on a wire_api hardcode.** `inspect_swe`'s `codex_cli()` writes `wire_api: responses` into Codex's TOML config (see [`_codex_cli/codex_cli.py`](https://github.com/meridianlabs-ai/inspect_swe/blob/main/src/inspect_swe/_codex_cli/codex_cli.py) line ~240). Grove gives us OpenAI Chat Completions only. A one-line override (vendor patch or monkey-patch) to write `wire_api: chat` is the workaround. ~30-min spike to verify chat-mode Codex behaves acceptably.
+- **OpenCode pollutes OpenAI eval traces with a hardcoded title-generator call.** Every OpenCode session fires a side completion against a built-in `"You are a title generator. You output ONLY a thread title. Nothing else."` system prompt to populate its own session UI. The call rides the same OpenAI client Inspect configures, so it appears in every eval log as an extra turn with a non-task system message (see the `attachment://6d8e3f6d...` system content in `openai.json` / `codex.json` / `5.5.json`). It also hardcodes `reasoning_effort: minimal`, which Grove rejects for GPT-5-family deployments — `proxy.py:_rewrite_openai_body` rewrites it to `low` server-side, but the extra turn itself can't be suppressed from our side. Net: the `/openai` route is fine for connectivity validation (`hello_openai`) but is **not suitable for scored evals**. Use the Anthropic/Claude Code path until OpenCode exposes a switch.
 - **No Gemini access through Grove** as of May 8, 2026. Cross-harness Gemini cuts unless an alternate path appears.
 - **Skill paths are hardcoded** to a local checkout of `mongodb/agent-skills`. Should be parameterized via env var or a config file before the team uses the repo.
 
