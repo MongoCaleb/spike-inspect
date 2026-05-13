@@ -15,8 +15,8 @@ Empirical validation that Inspect AI + `inspect_swe` + Grove are a viable founda
 
 ```
 .
-├── pyproject.toml            inspect-ai 0.3.220, inspect-swe 0.2.51, anthropic 0.100.0,
-│                              fastapi 0.136.1, uvicorn 0.46.0
+├── pyproject.toml            inspect-ai 0.3.220, inspect-swe (MongoCaleb fork),
+│                              anthropic 0.100.0, fastapi 0.136.1, uvicorn 0.46.0
 ├── .env.example              Grove credential template (.env is gitignored)
 ├── proxy.py                  Local translating proxy - holds Grove key server-side,
 │                              strips client auth headers, injects api-key:.
@@ -106,18 +106,18 @@ uv run inspect eval tasks/hello.py@hello_anthropic \
   --model "anthropic/$ANTHROPIC_MODEL" \
   --model-base-url "http://127.0.0.1:7676/anthropic"
 ```
-#### A note about `openai`: Not ready yet because of the title-generator issue.
+#### To run OpenAI / OpenCode through Grove:
 
-Same pipeline through Grove's OpenAI Chat Completions endpoint
-via the OpenCode sandbox harness. `$OPENAI_MODEL` is already in `provider/id`
-form (e.g. `openai/gpt-4o`); do NOT use `openai/$ANTHROPIC_MODEL` here — Grove
-rejects Anthropic model ids on its OpenAI endpoint with `api_not_supported`.
-Connectivity check only — OpenCode injects a hardcoded title-generator turn
-into every session, so this path is not suitable for scored evals. See
-#### See "Known issues" below.
+Same pipeline through Grove's OpenAI Chat Completions endpoint via the OpenCode
+sandbox harness. `$OPENAI_MODEL` is already in `provider/id` form (e.g.
+`openai/gpt-4o`); do NOT use `openai/$ANTHROPIC_MODEL` here — Grove rejects
+Anthropic model ids on its OpenAI endpoint with `api_not_supported`.
+
+```bash
 uv run inspect eval tasks/hello.py@hello_openai \
   --model "$OPENAI_MODEL" \
   --model-base-url "http://127.0.0.1:7676/openai"
+```
 
 ### Step 3: Check the log reports
 
@@ -184,13 +184,11 @@ Use any of the existing task files as a starting point for your own tasks.
 
 ## Known issues / open work
 
-- **Codex CLI through Grove is blocked on a wire_api hardcode.** `inspect_swe`'s `codex_cli()` writes `wire_api: responses` into Codex's TOML config (see [`_codex_cli/codex_cli.py`](https://github.com/meridianlabs-ai/inspect_swe/blob/main/src/inspect_swe/_codex_cli/codex_cli.py) line ~240). Grove gives us OpenAI Chat Completions only. A one-line override (vendor patch or monkey-patch) to write `wire_api: chat` is the workaround. ~30-min spike to verify chat-mode Codex behaves acceptably.
-- **OpenCode pollutes OpenAI eval traces with a hardcoded title-generator call.** Every OpenCode session fires a side completion against a built-in `"You are a title generator. You output ONLY a thread title. Nothing else."` system prompt to populate its own session UI. The call rides the same OpenAI client Inspect configures, so it appears in every eval log as an extra turn with a non-task system message (see the `attachment://6d8e3f6d...` system content in `openai.json` / `codex.json` / `5.5.json`). It also hardcodes `reasoning_effort: minimal`, which Grove rejects for GPT-5-family deployments — `proxy.py:_rewrite_openai_body` rewrites it to `low` server-side, but the extra turn itself can't be suppressed from our side. Net: the `/openai` route is fine for connectivity validation (`hello_openai`) but is **not suitable for scored evals**. Use the Anthropic/Claude Code path until OpenCode exposes a switch.
 - **No Gemini access through Grove** as of May 8, 2026. Cross-harness Gemini cuts unless an alternate path appears.
 - **Skill paths are hardcoded** to a local checkout of `mongodb/agent-skills`. Should be parameterized via env var or a config file before the team uses the repo.
 
 ## References
 
 - Skunkworks team brief: `team-brief.md` (sibling doc; not in this repo).
-- [Inspect AI](https://github.com/UKGovernmentBEIS/inspect_ai) · [`inspect_swe`](https://github.com/meridianlabs-ai/inspect_swe) · [`inspect_flow`](https://github.com/meridianlabs-ai/inspect_flow)
+- [Inspect AI](https://github.com/UKGovernmentBEIS/inspect_ai) · [`inspect_swe`](https://github.com/MongoCaleb/inspect_swe) (fork with OpenCode + Codex fixes; upstream: [meridianlabs-ai/inspect_swe](https://github.com/meridianlabs-ai/inspect_swe)) · [`inspect_flow`](https://github.com/meridianlabs-ai/inspect_flow)
 - [`mongodb/agent-skills`](https://github.com/mongodb/agent-skills) — public skills + eval cases

@@ -12,3 +12,6 @@ dependencies = [
     "uvicorn>=0.46.0",
     "python-dotenv>=1.2.2",
 ]
+
+[tool.uv.sources]
+inspect-swe = { git = "https://github.com/MongoCaleb/inspect_swe" }

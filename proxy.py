@@ -126,19 +126,6 @@ async def _proxy(route: str, path: str, request: Request):
 async def anthropic_proxy(path: str, request: Request):
     return await _proxy("anthropic", path, request)
 
-
-# The /openai route is kept for connectivity validation only - it is NOT
-# suitable for clean evals. OpenCode's binary unconditionally fires a side
-# call per session against a hardcoded "You are a title generator..." system
-# prompt to populate its own session UI. That call rides the same OpenAI
-# client Inspect configures, so it shows up in every eval log as an extra
-# turn with a non-task system message (visible as the
-# `attachment://6d8e3f6d...` system content in openai.json / codex.json /
-# 5.5.json). It also hardcodes `reasoning_effort: minimal` for GPT-5-family
-# models, which Grove rejects - see `_rewrite_openai_body` above for the
-# server-side workaround. Net: the OpenAI/OpenCode path pollutes traces with
-# agent-harness-internal calls we can't suppress from this side. Prefer the
-# Anthropic/Claude Code path for scored runs until OpenCode exposes a switch.
 @app.api_route(
     "/openai/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"]
 )
