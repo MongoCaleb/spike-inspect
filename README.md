@@ -128,6 +128,69 @@ uv run inspect view
 ```
 Then open http://127.0.0.1:7575/ to explore the logs.
 
+## Comparing runs
+
+`compare.py` runs N `(task, model)` configurations in one shot and prints a summary table at the end. Each run still produces a normal `.eval` log in `logs/` (viewable via `inspect view`), and a `compare-<timestamp>.json` summary is written alongside.
+
+A "run" is the triple `(task_ref, model, base_url?)`. Because each `@task` in `tasks/` already encodes the harness (`generate` / `claude_code` / `opencode`) and any solver options (skills, seeded files, etc.), comparing across harness, model, or options is just a matter of listing more triples. `base_url` is derived from the model's `provider/` prefix against `--proxy`:
+
+- `anthropic/...` → `<proxy>/anthropic`
+- `openai/...` → `<proxy>/openai`
+- anything else → bare `<proxy>` (matches `hello_basic`)
+
+Set up the proxy and `.env` as in Step 1 first.
+
+```bash
+# List all discovered @task refs:
+uv run python compare.py --list-tasks
+
+# Dry run (resolve and print, no eval):
+uv run python compare.py --dry-run \
+  --run "tasks/hello.py@hello_basic:anthropic/$ANTHROPIC_MODEL" \
+  --run "tasks/hello.py@hello_openai:$OPENAI_MODEL"
+
+# Headline lift: same eval, skill OFF vs ON:
+uv run python compare.py \
+  --run "tasks/mcp_setup_settings.py@mcp_setup_first_settings:anthropic/$ANTHROPIC_MODEL" \
+  --run "tasks/mcp_setup_with_skill.py@mcp_setup_first_with_skill:anthropic/$ANTHROPIC_MODEL"
+
+# Cross-harness on the same prompt:
+uv run python compare.py \
+  --run "tasks/hello.py@hello_anthropic:anthropic/$ANTHROPIC_MODEL" \
+  --run "tasks/hello.py@hello_openai:$OPENAI_MODEL"
+
+# From a config file:
+uv run python compare.py --config compare.json
+
+# Run up to 2 cells in parallel (one inspect_ai process per child):
+uv run python compare.py --parallel 2 \
+  --run "tasks/hello.py@hello_basic:anthropic/$ANTHROPIC_MODEL" \
+  --run "tasks/hello.py@hello_basic:$OPENAI_MODEL"
+```
+
+Output:
+
+- A flat table with one row per `(run, scorer, metric)` triple. A run with multiple scorers or multiple metrics per scorer (e.g. `accuracy` + `stderr`) gets one row each.
+- A **pivot table** (rows = tasks, cols = models, cells = primary metric value) is printed when there are 2+ unique tasks AND 2+ unique models AND all results share the same primary metric.
+- The JSON summary captures the full `metrics: [{scorer, name, value}, ...]` per run, plus `samples`, `status`, `error`, and the path to the `.eval` log.
+
+`--parallel N` uses a process pool (each child has its own `inspect_ai` state; `eval_async` from one process can't run concurrently with another). Output from concurrent runs will interleave on the console; the summary table at the end is always coherent.
+
+Example `compare.json`:
+
+```json
+{
+  "proxy": "http://127.0.0.1:7676",
+  "runs": [
+    {"task": "tasks/hello.py@hello_anthropic", "model": "anthropic/claude-sonnet-4-5"},
+    {"task": "tasks/hello.py@hello_anthropic", "model": "anthropic/claude-opus-4-7"},
+    {"task": "tasks/hello.py@hello_openai",    "model": "openai/gpt-4o"}
+  ]
+}
+```
+
+With no `--run` and no `--config`, `compare.py` falls back to interactive prompts for task selection and model list.
+
 ## Confirming logs are clean
 
 ```bash
