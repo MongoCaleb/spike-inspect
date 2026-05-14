@@ -7,33 +7,23 @@ against the expected_output description (which is prose, not a pattern).
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
 from inspect_ai import Task, task
-from inspect_ai.dataset import Sample
 from inspect_ai.scorer import model_graded_qa
 from inspect_swe import claude_code
+
+from _evals_lib import load_sample_by_index
 
 EVALS_PATH = Path(
     "/Users/dachary.carey/workspace/agent-skills/testing/mongodb-mcp-setup/evals/evals.json"
 )
 
 
-def load_first_sample() -> Sample:
-    data = json.loads(EVALS_PATH.read_text())
-    first = data["evals"][0]
-    return Sample(
-        input=first["prompt"],
-        target=first["expected_output"],
-        metadata={"id": first["id"], "skill": data["skill_name"]},
-    )
-
-
 @task
 def mcp_setup_first() -> Task:
     return Task(
-        dataset=[load_first_sample()],
+        dataset=[load_sample_by_index(EVALS_PATH, 0)],
         solver=claude_code(),
         scorer=model_graded_qa(),
         sandbox="docker",

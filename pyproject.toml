@@ -5,8 +5,18 @@ description = "Add your description here"
 requires-python = ">=3.13"
 dependencies = [
     "anthropic>=0.100.0",
+    "openai>=1.0.0",
     "fastapi>=0.136.1",
     "inspect-ai>=0.3.220",
-    "inspect-swe>=0.2.51",
+    "inspect-swe>=0.2.52",
     "uvicorn>=0.46.0",
+    "python-dotenv>=1.2.2",
+]
+
+[tool.uv.sources]
+inspect-swe = { git = "https://github.com/MongoCaleb/inspect_swe" }
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.3",
 ]

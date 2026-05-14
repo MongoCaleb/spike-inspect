@@ -14,11 +14,12 @@ import json
 from pathlib import Path
 
 from inspect_ai import Task, task
-from inspect_ai.dataset import Sample
 from inspect_ai.scorer import model_graded_qa
 from inspect_ai.solver import Generate, Solver, TaskState, chain, solver
 from inspect_ai.util import sandbox
 from inspect_swe import claude_code
+
+from _evals_lib import load_sample_by_index
 
 EVALS_PATH = Path(
     "/Users/dachary.carey/workspace/agent-skills/testing/mongodb-mcp-setup/evals/evals.json"
@@ -40,16 +41,6 @@ SETTINGS_LOCAL_JSON = json.dumps(
 )
 
 
-def load_first_sample() -> Sample:
-    data = json.loads(EVALS_PATH.read_text())
-    first = data["evals"][0]
-    return Sample(
-        input=first["prompt"],
-        target=first["expected_output"],
-        metadata={"id": first["id"], "skill": data["skill_name"]},
-    )
-
-
 @solver
 def seed_claude_settings_local() -> Solver:
     """Plant the broken state in a file Claude Code reads but inspect_swe doesn't touch."""
@@ -67,7 +58,7 @@ def seed_claude_settings_local() -> Solver:
 @task
 def mcp_setup_first_settings() -> Task:
     return Task(
-        dataset=[load_first_sample()],
+        dataset=[load_sample_by_index(EVALS_PATH, 0)],
         solver=chain(seed_claude_settings_local(), claude_code()),
         scorer=model_graded_qa(),
         sandbox="docker",
