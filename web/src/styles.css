@@ -1,4 +1,5 @@
 :root {
+  /* Dark theme (default). */
   --bg: #0f1115;
   --panel: #161a22;
   --border: #262c3a;
@@ -7,8 +8,36 @@
   --accent: #7aa2f7;
   --error: #f7768e;
   --error-bg: #2a1620;
+  /* Surfaces used by table rows, file-list striping, etc. */
+  --stripe-odd: #10141c;
+  --stripe-even: #1f2535;
+  --hover: #1d2330;
+  --active: #243049;
+  --th-bg: #1c2230;
+  --row-hover: #1a212e;
+  --error-row-bg: rgba(247, 118, 142, 0.06);
   font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
   color-scheme: dark;
+}
+
+/* Light theme: applied when <html data-theme="light"> is set. */
+:root[data-theme="light"] {
+  --bg: #f6f7f9;
+  --panel: #ffffff;
+  --border: #d9dee7;
+  --fg: #1d2330;
+  --muted: #5b6473;
+  --accent: #2563eb;
+  --error: #c0334d;
+  --error-bg: #fde8ec;
+  --stripe-odd: #eef1f6;
+  --stripe-even: #dde3ec;
+  --hover: #d3dae6;
+  --active: #b8c8e8;
+  --th-bg: #eef1f6;
+  --row-hover: #eef1f6;
+  --error-row-bg: rgba(192, 51, 77, 0.06);
+  color-scheme: light;
 }
 
 * { box-sizing: border-box; }
@@ -36,18 +65,28 @@ body { background: var(--bg); color: var(--fg); }
   cursor: pointer;
   margin-bottom: 2px;
 }
-.file-list li:hover { background: #1d2330; }
-.file-list li.active { background: #243049; }
+.file-list li:nth-child(odd)  { background: var(--stripe-odd); }
+.file-list li:nth-child(even) { background: var(--stripe-even); }
+.file-list li:hover   { background: var(--hover); }
+.file-list li.active  { background: var(--active); }
 .file-name { font-family: ui-monospace, "JetBrains Mono", monospace; font-size: 12px; }
 .file-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
 
 .content { overflow: auto; padding: 24px 28px; }
 
+.page-title {
+  margin: 0 0 20px 0;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--fg);
+}
+
 .summary-header { margin-bottom: 24px; }
 .summary-header h2 {
   margin: 0 0 6px 0;
-  font-family: ui-monospace, "JetBrains Mono", monospace;
   font-size: 16px;
+  font-weight: 600;
 }
 .meta { display: flex; gap: 18px; flex-wrap: wrap; color: var(--muted); font-size: 13px; }
 .meta strong { color: var(--fg); font-weight: 600; }
@@ -115,11 +154,17 @@ details.group-task .table-wrap {
   background: transparent;
 }
 
-/* Tint group headers that contain at least one score == 1. The tint sits on
-   the summary so it stays visible whether the group is open or closed. */
-details.has-perfect > summary {
+/* Tint group headers that contain perfect (1.0) scores. The tint sits on
+   the summary so it stays visible whether the group is open or closed.
+   Green when every row in the group is 1.0; yellow when only some are. */
+details.has-perfect-all > summary {
   background: rgba(158, 206, 106, 0.10);
   border-left: 3px solid #9ece6a;
+  padding-left: 7px;
+}
+details.has-perfect-some > summary {
+  background: rgba(224, 175, 104, 0.10);
+  border-left: 3px solid #e0af68;
   padding-left: 7px;
 }
 
@@ -128,13 +173,30 @@ details.has-perfect > summary {
   margin-left: 8px;
   padding: 1px 8px;
   border-radius: 10px;
-  background: rgba(158, 206, 106, 0.15);
-  color: #9ece6a;
   font-size: 11px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.02em;
 }
+.perfect-badge-all {
+  background: rgba(158, 206, 106, 0.15);
+  color: #9ece6a;
+}
+.perfect-badge-some {
+  background: rgba(224, 175, 104, 0.15);
+  color: #e0af68;
+}
+
+/* Link to the inspect_ai log viewer (configurable via VITE_INSPECT_VIEW_URL,
+   defaults to http://127.0.0.1:7575). */
+.inspect-link {
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 11px;
+  white-space: nowrap;
+}
+.inspect-link:hover { text-decoration: underline; }
+.inspect-cell { white-space: nowrap; }
 
 .table-wrap {
   overflow: auto;
@@ -154,24 +216,32 @@ table.grid th, table.grid td {
   white-space: nowrap;
 }
 table.grid th {
-  background: #1c2230;
+  background: var(--th-bg);
   color: var(--muted);
   font-weight: 600;
   position: sticky;
   top: 0;
   z-index: 1;
 }
-table.grid tbody tr:hover { background: #1a212e; }
+table.grid tbody tr:hover { background: var(--row-hover); }
 table.grid tbody tr:last-child td { border-bottom: none; }
 
 .num { text-align: right; font-variant-numeric: tabular-nums; }
 .mono { font-family: ui-monospace, "JetBrains Mono", monospace; }
 .err { color: var(--error); max-width: 480px; white-space: normal; }
 
-.row-error td { background: rgba(247, 118, 142, 0.06); }
+.row-error td { background: var(--error-row-bg); }
 
 .row-perfect td { background: rgba(158, 206, 106, 0.10); }
 .cell-perfect { font-weight: 700; color: #9ece6a; }
+
+/* Pivot table: tier a task row by whether all present cells scored 1.0
+   (green) or just some (yellow). A colored bar on the leftmost cell mirrors
+   the file/task summary highlighting. */
+tr.row-perfect-all td  { background: rgba(158, 206, 106, 0.10); }
+tr.row-perfect-some td { background: rgba(224, 175, 104, 0.10); }
+tr.row-perfect-all  td:first-child { box-shadow: inset 3px 0 0 #9ece6a; }
+tr.row-perfect-some td:first-child { box-shadow: inset 3px 0 0 #e0af68; }
 
 .error {
   background: var(--error-bg);
@@ -183,3 +253,21 @@ table.grid tbody tr:last-child td { border-bottom: none; }
   font-family: ui-monospace, monospace;
   font-size: 12px;
 }
+
+/* Light/dark theme toggle in the top-right of the viewport. */
+.theme-toggle {
+  position: fixed;
+  top: 14px;
+  right: 18px;
+  z-index: 10;
+  background: var(--panel);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  font-family: inherit;
+  line-height: 1;
+}
+.theme-toggle:hover { background: var(--hover); }

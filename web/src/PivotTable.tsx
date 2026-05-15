@@ -1,5 +1,5 @@
 import type { RunResult } from './types'
-import { fmtScore } from './format'
+import { fmtScore, inspectUrl } from './format'
 
 // Mirrors compare.print_pivot: rows=task, cols=model, cell=primary metric.
 // Only renders when there are 2+ tasks AND 2+ models AND all results share
@@ -17,6 +17,21 @@ export function PivotTable({ results }: { results: RunResult[] }) {
   const metricName = metricNames.values().next().value as string
   const byKey = new Map<string, RunResult>()
   for (const r of results) byKey.set(`${r.task}\u0000${r.model}`, r)
+
+  // Classify a slice (row or column) by how many present cells equal 1.0.
+  // Missing cells are ignored so a sparse pivot still classifies cleanly.
+  // Returns '' / '-some' / '-all' to use as a class suffix.
+  const classifySuffix = (cells: (RunResult | undefined)[]): string => {
+    let present = 0
+    let perfect = 0
+    for (const c of cells) {
+      if (!c) continue
+      present++
+      if (c.score === 1) perfect++
+    }
+    if (present === 0 || perfect === 0) return ''
+    return perfect === present ? '-all' : '-some'
+  }
 
   return (
     <section>
@@ -38,16 +53,23 @@ export function PivotTable({ results }: { results: RunResult[] }) {
           <tbody>
             {tasks.map((t) => {
               const cells = models.map((m) => byKey.get(`${t}\u0000${m}`))
-              const perfectRow = cells.some((r) => r?.score === 1)
+              const rowSuffix = classifySuffix(cells)
+              const rowCls = rowSuffix ? 'row-perfect' + rowSuffix : undefined
               return (
-                <tr key={t} className={perfectRow ? 'row-perfect' : undefined}>
+                <tr key={t} className={rowCls}>
                   <td className="mono">{t}</td>
                   {cells.map((r, i) => {
                     const perfect = r?.score === 1
+                    const url = inspectUrl(r?.log_file)
+                    const text = r ? fmtScore(r.score) : '-'
                     return (
                       <td key={models[i]}
                           className={'num' + (perfect ? ' cell-perfect' : '')}>
-                        {r ? fmtScore(r.score) : '-'}
+                        {url ? (
+                          <a className="inspect-link" href={url}
+                             target="_blank" rel="noreferrer"
+                             title={r?.log_file ?? ''}>{text}</a>
+                        ) : text}
                       </td>
                     )
                   })}
