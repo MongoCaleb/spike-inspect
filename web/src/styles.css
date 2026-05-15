@@ -1,0 +1,185 @@
+:root {
+  --bg: #0f1115;
+  --panel: #161a22;
+  --border: #262c3a;
+  --fg: #e6e8ee;
+  --muted: #8b94a7;
+  --accent: #7aa2f7;
+  --error: #f7768e;
+  --error-bg: #2a1620;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; margin: 0; }
+body { background: var(--bg); color: var(--fg); }
+
+.layout {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  height: 100vh;
+}
+
+.sidebar {
+  border-right: 1px solid var(--border);
+  background: var(--panel);
+  overflow-y: auto;
+  padding: 16px;
+}
+.sidebar h1 { font-size: 14px; margin: 0 0 12px 0; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+
+.file-list { list-style: none; padding: 0; margin: 0; }
+.file-list li {
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-bottom: 2px;
+}
+.file-list li:hover { background: #1d2330; }
+.file-list li.active { background: #243049; }
+.file-name { font-family: ui-monospace, "JetBrains Mono", monospace; font-size: 12px; }
+.file-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+.content { overflow: auto; padding: 24px 28px; }
+
+.summary-header { margin-bottom: 24px; }
+.summary-header h2 {
+  margin: 0 0 6px 0;
+  font-family: ui-monospace, "JetBrains Mono", monospace;
+  font-size: 16px;
+}
+.meta { display: flex; gap: 18px; flex-wrap: wrap; color: var(--muted); font-size: 13px; }
+.meta strong { color: var(--fg); font-weight: 600; }
+
+section { margin-bottom: 32px; }
+.dim { color: var(--muted); font-weight: normal; }
+
+/* Top-level collapsible section (Results / Pivot). */
+details.section > summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 8px 0;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+  user-select: none;
+}
+details.section > summary::-webkit-details-marker { display: none; }
+details.section > summary::before {
+  content: "▸";
+  display: inline-block;
+  width: 14px;
+  color: var(--muted);
+  transition: transform 0.1s ease;
+}
+details.section[open] > summary::before { transform: rotate(90deg); }
+.section-title {
+  font-size: 13px;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+}
+
+/* Nested groups inside Results: file -> task. */
+details.group-file, details.group-task {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel);
+  margin: 6px 0;
+}
+details.group-file > summary, details.group-task > summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 6px 10px;
+  font-size: 12.5px;
+  user-select: none;
+}
+details.group-file > summary::-webkit-details-marker,
+details.group-task > summary::-webkit-details-marker { display: none; }
+details.group-file > summary::before,
+details.group-task > summary::before {
+  content: "▸";
+  display: inline-block;
+  width: 14px;
+  color: var(--muted);
+}
+details.group-file[open] > summary::before,
+details.group-task[open] > summary::before { content: "▾"; }
+details.group-file[open] > summary { border-bottom: 1px solid var(--border); }
+details.group-task { margin: 6px 10px; }
+details.group-task[open] > summary { border-bottom: 1px solid var(--border); }
+details.group-task .table-wrap {
+  border: none;
+  border-radius: 0;
+  background: transparent;
+}
+
+/* Tint group headers that contain at least one score == 1. The tint sits on
+   the summary so it stays visible whether the group is open or closed. */
+details.has-perfect > summary {
+  background: rgba(158, 206, 106, 0.10);
+  border-left: 3px solid #9ece6a;
+  padding-left: 7px;
+}
+
+.perfect-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 8px;
+  border-radius: 10px;
+  background: rgba(158, 206, 106, 0.15);
+  color: #9ece6a;
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+.table-wrap {
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+}
+table.grid {
+  border-collapse: collapse;
+  font-size: 12.5px;
+  width: 100%;
+}
+table.grid th, table.grid td {
+  padding: 6px 10px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+table.grid th {
+  background: #1c2230;
+  color: var(--muted);
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+table.grid tbody tr:hover { background: #1a212e; }
+table.grid tbody tr:last-child td { border-bottom: none; }
+
+.num { text-align: right; font-variant-numeric: tabular-nums; }
+.mono { font-family: ui-monospace, "JetBrains Mono", monospace; }
+.err { color: var(--error); max-width: 480px; white-space: normal; }
+
+.row-error td { background: rgba(247, 118, 142, 0.06); }
+
+.row-perfect td { background: rgba(158, 206, 106, 0.10); }
+.cell-perfect { font-weight: 700; color: #9ece6a; }
+
+.error {
+  background: var(--error-bg);
+  color: var(--error);
+  border: 1px solid var(--error);
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+}
