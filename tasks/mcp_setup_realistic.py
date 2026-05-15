@@ -14,8 +14,6 @@ should diagnose this and produce the expected_output trajectory.
 
 from __future__ import annotations
 
-from pathlib import Path
-
 from inspect_ai import Task, task
 from inspect_ai.scorer import model_graded_qa
 from inspect_ai.solver import Generate, Solver, TaskState, chain, solver
@@ -23,11 +21,9 @@ from inspect_ai.tool import MCPServerConfigStdio
 from inspect_ai.util import sandbox
 from inspect_swe import claude_code
 
-from _evals_lib import load_sample_by_index
+from _evals_lib import evals_path, load_sample_by_index
 
-EVALS_PATH = Path(
-    "/Users/dachary.carey/workspace/agent-skills/testing/mongodb-mcp-setup/evals/evals.json"
-)
+EVALS_PATH = evals_path("mongodb-mcp-setup")
 
 MONGODB_MCP_SERVER = MCPServerConfigStdio(
     name="mongodb",

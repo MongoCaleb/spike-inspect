@@ -243,6 +243,14 @@ tr.row-perfect-some td { background: rgba(224, 175, 104, 0.10); }
 tr.row-perfect-all  td:first-child { box-shadow: inset 3px 0 0 #9ece6a; }
 tr.row-perfect-some td:first-child { box-shadow: inset 3px 0 0 #e0af68; }
 
+/* Per-model "N/M perfect" line under each pivot column header. Tiered with
+   the same palette used by .perfect-badge / .cell-perfect so the column
+   count, the row tint, and the cell highlight all read consistently. */
+.col-count { font-weight: 600; font-variant-numeric: tabular-nums; font-size: 11px; }
+.col-count-all  { color: #9ece6a; }
+.col-count-some { color: #e0af68; }
+.col-count-none { color: var(--accent); }
+
 .error {
   background: var(--error-bg);
   color: var(--error);

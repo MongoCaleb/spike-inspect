@@ -18,10 +18,10 @@ export function PivotTable({ results }: { results: RunResult[] }) {
   const byKey = new Map<string, RunResult>()
   for (const r of results) byKey.set(`${r.task}\u0000${r.model}`, r)
 
-  // Classify a slice (row or column) by how many present cells equal 1.0.
-  // Missing cells are ignored so a sparse pivot still classifies cleanly.
-  // Returns '' / '-some' / '-all' to use as a class suffix.
-  const classifySuffix = (cells: (RunResult | undefined)[]): string => {
+  // Count present cells in a slice and how many equal 1.0. Missing cells are
+  // ignored so a sparse pivot still classifies cleanly. The CSS suffix is
+  // '' / '-some' / '-all' depending on the present-vs-perfect counts.
+  const tally = (cells: (RunResult | undefined)[]) => {
     let present = 0
     let perfect = 0
     for (const c of cells) {
@@ -29,8 +29,13 @@ export function PivotTable({ results }: { results: RunResult[] }) {
       present++
       if (c.score === 1) perfect++
     }
-    if (present === 0 || perfect === 0) return ''
-    return perfect === present ? '-all' : '-some'
+    const suffix =
+      present === 0 || perfect === 0
+        ? ''
+        : perfect === present
+          ? '-all'
+          : '-some'
+    return { present, perfect, suffix }
   }
 
   return (
@@ -45,15 +50,26 @@ export function PivotTable({ results }: { results: RunResult[] }) {
           <thead>
             <tr>
               <th>task</th>
-              {models.map((m) => (
-                <th key={m} className="num mono">{m}</th>
-              ))}
+              {models.map((m) => {
+                const colCells = tasks.map((t) => byKey.get(`${t}\u0000${m}`))
+                const { present, perfect, suffix } = tally(colCells)
+                const countCls =
+                  'col-count' + (suffix ? ' col-count' + suffix : ' col-count-none')
+                return (
+                  <th key={m} className="num mono">
+                    <div>{m}</div>
+                    {present > 0 && (
+                      <div className={countCls}>{perfect}/{present} perfect</div>
+                    )}
+                  </th>
+                )
+              })}
             </tr>
           </thead>
           <tbody>
             {tasks.map((t) => {
               const cells = models.map((m) => byKey.get(`${t}\u0000${m}`))
-              const rowSuffix = classifySuffix(cells)
+              const { suffix: rowSuffix } = tally(cells)
               const rowCls = rowSuffix ? 'row-perfect' + rowSuffix : undefined
               return (
                 <tr key={t} className={rowCls}>

@@ -7,17 +7,13 @@ against the expected_output description (which is prose, not a pattern).
 
 from __future__ import annotations
 
-from pathlib import Path
-
 from inspect_ai import Task, task
 from inspect_ai.scorer import model_graded_qa
 from inspect_swe import claude_code
 
-from _evals_lib import load_sample_by_id
+from _evals_lib import evals_path, load_sample_by_id
 
-EVALS_PATH = Path(
-    "/Users/caleb.thompson/Projects/mongodb/agent-skills/testing/mongodb-search-and-ai/evals/evals.json"
-)
+EVALS_PATH = evals_path("mongodb-search-and-ai")
 
 
 @task
